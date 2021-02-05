@@ -35,6 +35,8 @@ namespace Tizen.Applications.ComponentBased
         private IntPtr _port = IntPtr.Zero;
         private Interop.ComponentPort.ComponentPortRequestCallback _requestEventCallback;
         private Interop.ComponentPort.ComponentPortSyncRequestCallback _syncRequestEventCallback;
+        private Interop.ComponentPort.ComponentPortAppearedCallback _appearedEventCallback;
+        private Interop.ComponentPort.ComponentPortVanishedCallback _vanishedEventCallback;
 
         /// <summary>
         /// Constructor for this class.
@@ -53,8 +55,12 @@ namespace Tizen.Applications.ComponentBased
             _portName = portName;
             _requestEventCallback = new Interop.ComponentPort.ComponentPortRequestCallback(OnRequestEvent);
             _syncRequestEventCallback = new Interop.ComponentPort.ComponentPortSyncRequestCallback(OnSyncRequestEvent);
+            _appearedEventCallback = new Interop.ComponentPort.ComponentPortAppearedCallback(OnAppearedEvent);
+            _vanishedEventCallback = new Interop.ComponentPort.ComponentPortVanishedCallback(OnVanishedEvent);
             Interop.ComponentPort.SetRequestCb(_port, _requestEventCallback, IntPtr.Zero);
             Interop.ComponentPort.SetSyncRequestCb(_port, _syncRequestEventCallback, IntPtr.Zero);
+            Interop.ComponentPort.SetAppearedCb(_port, _appearedEventCallback, IntPtr.Zero);
+            Interop.ComponentPort.SetVanished(_port, _vanishedEventCallback, IntPtr.Zero);
         }
 
         /// <summary>
@@ -237,6 +243,30 @@ namespace Tizen.Applications.ComponentBased
         }
 
         /// <summary>
+        /// Checks whether the endpoint is running or not.
+        /// </summary>
+        /// <param name="endpoint">The name of the endpoint</param>
+        /// <returns>true, if the name of the endpoint is running</returns>
+        /// <exception cref="ArgumentException">Thrown when the argument is invalid.</exception>
+        /// <exception cref="global::System.IO.IOException">Thrown when because of I/O error.</exception>
+        /// <since_tizen> 9 </since_tizen>
+        public bool IsRunning(string endpoint)
+        {
+            if (string.IsNullOrEmpty(endpoint))
+            {
+                throw new ArgumentException("endpoint is null");
+            }
+
+            Interop.ComponentPort.ErrorCode err = Interop.ComponentPort.IsRunning(_port, endpoint, out bool is_running);
+            if (err != Interop.ComponentPort.ErrorCode.None)
+            {
+                throw ComponentPortErrorFactory.GetException(err, "Failed to check running state.");
+            }
+
+            return is_running;
+        }
+
+        /// <summary>
         /// Abstract method for receiving a request event.
         /// </summary>
         /// <param name="sender">The name of the sender</param>
@@ -252,6 +282,20 @@ namespace Tizen.Applications.ComponentBased
         /// <returns>The serializable data</returns>
         /// <since_tizen> 9 </since_tizen>
         protected abstract object OnSyncRequestEvent(string sender, object request);
+
+        /// <summary>
+        /// Abstrace method for receiving a port event that is the port is appeared.
+        /// </summary>
+        /// <param name="endpoint">The name of the endpoint</param>
+        /// <size_tizen> 9 </size_tizen>
+        protected abstract void OnAppearedEvent(string endpoint);
+
+        /// <summary>
+        /// Abstrace method for receiving a port event that is the port is vanished.
+        /// </summary>
+        /// <param name="endpoint">The name of the endpoint</param>
+        /// <size_tizen> 9 </size_tizen>
+        protected abstract object OnVanishedEvent(string endpoint);
 
 
         private void OnRequestEvent(string sender, IntPtr request, IntPtr data)
@@ -290,6 +334,16 @@ namespace Tizen.Applications.ComponentBased
                     }
                 }
             }
+        }
+
+        private void OnAppearedEvent(string endpoint, IntPtr data)
+        {
+
+        }
+
+        private void OnVanishedEvent(string endpoint, IntPtr data)
+        {
+
         }
 
         private Parcel ToParcel(object envelope)
