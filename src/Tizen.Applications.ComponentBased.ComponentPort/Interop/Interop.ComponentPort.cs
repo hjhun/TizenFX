@@ -93,7 +93,7 @@ internal static partial class Interop
         // int component_port_watch(const char *endpoint, component_port_appeared_cb appeared_cb, component_port_vanished_cb vanished_cb, void *user_data, unsigned int *watcher_id);
 
         [DllImport(Libraries.ComponentPort, EntryPoint = "component_port_unwatch")]
-        internal static extern ErrorCode UnWatch(uint watcher_id);
+        internal static extern ErrorCode Unwatch(uint watcher_id);
         // int component_port_unwatch(unsigned int watcher_id);
     }
 }

@@ -86,11 +86,11 @@ namespace Tizen.Applications.ComponentBased
         /// <summary>
         /// Waits for events.
         /// </summary>
-        /// <reamrks>
+        /// <remarks>
         /// This method runs a main loop until Cancel() is called.
         /// The code in the next line will not run until Cancel() is called.
         /// It is recommended that this method uses in the sub thread.
-        /// </reamrks>
+        /// </remarks>
         /// <example>
         /// <code>
         /// public class CommPort : ComponentPort
@@ -249,57 +249,15 @@ namespace Tizen.Applications.ComponentBased
         public async Task<object> SendAsync(string endpoint, int timeout, object request)
         {
             TaskCompletionSource<object> tsc;
-            tsc = new TaskCompletionSource<object>(SendSync(endpoint, timeout, request));
-            return await tsc.Task.ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Waits for the port is ready, asynchronously.
-        /// </summary>
-        /// <param name="endpoint">The name of the endpoint</param>
-        /// <returns>A task that represents the asynchronous operation.</returns>
-        /// <since_tizen> 9 </since_tizen>
-        public static async Task WaitForPort(string endpoint)
-        {
-            Log.Info(LogTag, "START");
-            if (string.IsNullOrEmpty(endpoint))
-            {
-                throw new ArgumentException("Invalid argument");
-            }
-
             try
             {
-                if (IsRunning(endpoint))
-                    return;
-            }
-            catch (global::System.IO.IOException)
+                tsc = new TaskCompletionSource<object>(SendSync(endpoint, timeout, request));
+            } 
+            catch
             {
-                Log.Warn(LogTag, "IOException occurs");
                 throw;
             }
-
-            var task = new TaskCompletionSource<bool>();
-            Interop.ComponentPort.ComponentPortAppearedCallback appearedCallback = (string portName, int pid, IntPtr userData) =>
-            {
-                Log.Info(LogTag, portName + " is appeared");
-                task.SetResult(true);
-            };
-
-            Interop.ComponentPort.ComponentPortVanishedCallback vanishedCallback = (string portName, IntPtr userData) =>
-            {
-                Log.Info(LogTag, portName + " is vanished");
-            };
-
-            Interop.ComponentPort.ErrorCode err = Interop.ComponentPort.Watch(endpoint, appearedCallback, vanishedCallback, IntPtr.Zero, out uint watcherId);
-            if (err != Interop.ComponentPort.ErrorCode.None)
-            {
-                throw ComponentPortErrorFactory.GetException(err, "Watch() is failed");
-            }
-
-            await task.Task;
-
-            Interop.ComponentPort.UnWatch(watcherId);
-            Log.Info(LogTag, "END");
+            return await tsc.Task.ConfigureAwait(false);
         }
 
         /// <summary>

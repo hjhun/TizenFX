@@ -22,28 +22,18 @@ namespace Tizen.Applications.ComponentBased
     /// Provides a task class for the Tizen component-based application model.
     /// </summary>
     /// <since_tizen> 9 </since_tizen>
-    public class ComponentTask
+    public class ComponentPortTask
     {
         private Thread _thread = null;
 
         /// <summary>
-        /// Initializes the instance of the ComponentTask class.
+        /// Initializes the instance of the ComponentPortTask class.
         /// </summary>
         /// <param name="port">The component port object</param>
         /// <since_tizen> 9 </since_tizen>
-        public ComponentTask(ComponentPort port)
+        public ComponentPortTask(ComponentPort port)
         {
             Port = port;
-            _thread = new Thread(new ThreadStart(OnThread));
-        }
-
-        /// <summary>
-        /// Finalizes the instance of the ComponentTask class.
-        /// </summary>
-        /// <since_tizen> 9 </since_tizen>
-        ~ComponentTask()
-        {
-            Stop();
         }
 
         private void OnThread()
