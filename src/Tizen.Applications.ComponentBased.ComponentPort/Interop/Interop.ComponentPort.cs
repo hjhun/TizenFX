@@ -32,8 +32,8 @@ internal static partial class Interop
         // typedef void (*component_port_request_cb)(const char *sender, parcel_h request, parcel_h response, IntPtr user_data);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void ComponentPortAppearedCallback(string endpoint, IntPtr userData);
-        // typedef void (*component_port_appeared_cb)(const char *endpoint, IntPtr user_data);
+        internal delegate void ComponentPortAppearedCallback(string endpoint, int owner, IntPtr userData);
+        // typedef void (*component_port_appeared_cb)(const char *endpoint, pid_t owner, IntPtr user_data);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void ComponentPortVanishedCallback(string endpoint, IntPtr userData);
@@ -85,23 +85,15 @@ internal static partial class Interop
         // int component_port_send(component_port_h port, const char *endpoint, int timeout, parcel_h request, parcel_h *response);
 
         [DllImport(Libraries.ComponentPort, EntryPoint = "component_port_is_running")]
-        internal static extern ErrorCode IsRunning(IntPtr handle, string endpoint, out bool is_running);
-        // int component_port_is_running(component_port_h port, const char *endpoint, bool *is_running);
-
-        [DllImport(Libraries.ComponentPort, EntryPoint = "component_port_set_appeared_cb")]
-        internal static extern ErrorCode SetAppearedCb(IntPtr handle, ComponentPortAppearedCallback callback, IntPtr userData);
-        // int component_port_set_appeared_cb(component_port_h port, component_port_appeared_cb callback, void *user_data);
-
-        [DllImport(Libraries.ComponentPort, EntryPoint = "component_port_set_vanished_cb")]
-        internal static extern ErrorCode SetVanished(IntPtr handle, ComponentPortVanishedCallback callback, IntPtr userData);
-        // int component_port_set_vanished_cb(component_port_h port, component_port_vanished_cb callback, void *user_data);
+        internal static extern ErrorCode IsRunning(string endpoint, out bool is_running);
+        // int component_port_is_running(const char *endpoint, bool *is_running);
 
         [DllImport(Libraries.ComponentPort, EntryPoint = "component_port_watch")]
-        internal static extern ErrorCode Watch(IntPtr handle, string endpoint);
-        // int component_port_watch(component_port_h handle, const char *endpoint);
+        internal static extern ErrorCode Watch(string endpoint, ComponentPortAppearedCallback appearedCallback, ComponentPortVanishedCallback vanishedCallback, IntPtr userData, out uint watcherId);
+        // int component_port_watch(const char *endpoint, component_port_appeared_cb appeared_cb, component_port_vanished_cb vanished_cb, void *user_data, unsigned int *watcher_id);
 
         [DllImport(Libraries.ComponentPort, EntryPoint = "component_port_unwatch")]
-        internal static extern ErrorCode UnWatch(IntPtr handle, string endpoint);
-        // int component_port_unwatch(component_port_h handle, const char *endpoint);
+        internal static extern ErrorCode UnWatch(uint watcher_id);
+        // int component_port_unwatch(unsigned int watcher_id);
     }
 }

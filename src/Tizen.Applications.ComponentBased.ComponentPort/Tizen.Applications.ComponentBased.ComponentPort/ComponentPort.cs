@@ -21,6 +21,7 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security;
+using System.Threading.Tasks;
 
 namespace Tizen.Applications.ComponentBased
 {
@@ -31,12 +32,9 @@ namespace Tizen.Applications.ComponentBased
     public abstract class ComponentPort : IDisposable
     {
         private static string LogTag = "ComponentPort";
-        private readonly string _portName;
         private IntPtr _port = IntPtr.Zero;
         private Interop.ComponentPort.ComponentPortRequestCallback _requestEventCallback;
         private Interop.ComponentPort.ComponentPortSyncRequestCallback _syncRequestEventCallback;
-        private Interop.ComponentPort.ComponentPortAppearedCallback _appearedEventCallback;
-        private Interop.ComponentPort.ComponentPortVanishedCallback _vanishedEventCallback;
 
         /// <summary>
         /// Constructor for this class.
@@ -52,15 +50,11 @@ namespace Tizen.Applications.ComponentBased
             if (ret != Interop.ComponentPort.ErrorCode.None)
                 throw ComponentPortErrorFactory.GetException(ret, "ComponentPort(" + portName + ").");
 
-            _portName = portName;
+            PortName = portName;
             _requestEventCallback = new Interop.ComponentPort.ComponentPortRequestCallback(OnRequestEvent);
             _syncRequestEventCallback = new Interop.ComponentPort.ComponentPortSyncRequestCallback(OnSyncRequestEvent);
-            _appearedEventCallback = new Interop.ComponentPort.ComponentPortAppearedCallback(OnAppearedEvent);
-            _vanishedEventCallback = new Interop.ComponentPort.ComponentPortVanishedCallback(OnVanishedEvent);
             Interop.ComponentPort.SetRequestCb(_port, _requestEventCallback, IntPtr.Zero);
             Interop.ComponentPort.SetSyncRequestCb(_port, _syncRequestEventCallback, IntPtr.Zero);
-            Interop.ComponentPort.SetAppearedCb(_port, _appearedEventCallback, IntPtr.Zero);
-            Interop.ComponentPort.SetVanished(_port, _vanishedEventCallback, IntPtr.Zero);
         }
 
         /// <summary>
@@ -69,10 +63,8 @@ namespace Tizen.Applications.ComponentBased
         /// <since_tizen> 9 </since_tizen>
         public string PortName
         {
-            get
-            {
-                return _portName;
-            }
+            get;
+            private set;
         }
 
         /// <summary>
@@ -243,6 +235,74 @@ namespace Tizen.Applications.ComponentBased
         }
 
         /// <summary>
+        /// Sends the request data asynchronously.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown when the argument is invalid.</exception>
+        /// <exception cref="OutOfMemoryException">Thrown when the memory is insufficient.</exception>
+        /// <exception cref="UnauthorizedAccessException">Thrown when because of permission denied.</exception>
+        /// <exception cref="global::System.IO.IOException">Thrown when because of I/O error.</exception>
+        /// <param name="endpoint">The name of the endpoint</param>
+        /// <param name="timeout">The timeout in milliseconds, -1 to use the default timeout</param>
+        /// <param name="request">The serializable data to send</param>
+        /// <returns>A task with the received serializable data</returns>
+        /// /// <since_tizen> 9 </since_tizen>
+        public async Task<object> SendAsync(string endpoint, int timeout, object request)
+        {
+            TaskCompletionSource<object> tsc;
+            tsc = new TaskCompletionSource<object>(SendSync(endpoint, timeout, request));
+            return await tsc.Task.ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Waits for the port is ready, asynchronously.
+        /// </summary>
+        /// <param name="endpoint">The name of the endpoint</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        /// <since_tizen> 9 </since_tizen>
+        public static async Task WaitForPort(string endpoint)
+        {
+            Log.Info(LogTag, "START");
+            if (string.IsNullOrEmpty(endpoint))
+            {
+                throw new ArgumentException("Invalid argument");
+            }
+
+            try
+            {
+                if (IsRunning(endpoint))
+                    return;
+            }
+            catch (global::System.IO.IOException)
+            {
+                Log.Warn(LogTag, "IOException occurs");
+                throw;
+            }
+
+            var task = new TaskCompletionSource<bool>();
+            Interop.ComponentPort.ComponentPortAppearedCallback appearedCallback = (string portName, int pid, IntPtr userData) =>
+            {
+                Log.Info(LogTag, portName + " is appeared");
+                task.SetResult(true);
+            };
+
+            Interop.ComponentPort.ComponentPortVanishedCallback vanishedCallback = (string portName, IntPtr userData) =>
+            {
+                Log.Info(LogTag, portName + " is vanished");
+            };
+
+            Interop.ComponentPort.ErrorCode err = Interop.ComponentPort.Watch(endpoint, appearedCallback, vanishedCallback, IntPtr.Zero, out uint watcherId);
+            if (err != Interop.ComponentPort.ErrorCode.None)
+            {
+                throw ComponentPortErrorFactory.GetException(err, "Watch() is failed");
+            }
+
+            await task.Task;
+
+            Interop.ComponentPort.UnWatch(watcherId);
+            Log.Info(LogTag, "END");
+        }
+
+        /// <summary>
         /// Checks whether the endpoint is running or not.
         /// </summary>
         /// <param name="endpoint">The name of the endpoint</param>
@@ -250,14 +310,14 @@ namespace Tizen.Applications.ComponentBased
         /// <exception cref="ArgumentException">Thrown when the argument is invalid.</exception>
         /// <exception cref="global::System.IO.IOException">Thrown when because of I/O error.</exception>
         /// <since_tizen> 9 </since_tizen>
-        public bool IsRunning(string endpoint)
+        public static bool IsRunning(string endpoint)
         {
             if (string.IsNullOrEmpty(endpoint))
             {
                 throw new ArgumentException("endpoint is null");
             }
 
-            Interop.ComponentPort.ErrorCode err = Interop.ComponentPort.IsRunning(_port, endpoint, out bool is_running);
+            Interop.ComponentPort.ErrorCode err = Interop.ComponentPort.IsRunning(endpoint, out bool is_running);
             if (err != Interop.ComponentPort.ErrorCode.None)
             {
                 throw ComponentPortErrorFactory.GetException(err, "Failed to check running state.");
@@ -282,21 +342,6 @@ namespace Tizen.Applications.ComponentBased
         /// <returns>The serializable data</returns>
         /// <since_tizen> 9 </since_tizen>
         protected abstract object OnSyncRequestEvent(string sender, object request);
-
-        /// <summary>
-        /// Abstrace method for receiving a port event that is the port is appeared.
-        /// </summary>
-        /// <param name="endpoint">The name of the endpoint</param>
-        /// <size_tizen> 9 </size_tizen>
-        protected abstract void OnAppearedEvent(string endpoint);
-
-        /// <summary>
-        /// Abstrace method for receiving a port event that is the port is vanished.
-        /// </summary>
-        /// <param name="endpoint">The name of the endpoint</param>
-        /// <size_tizen> 9 </size_tizen>
-        protected abstract object OnVanishedEvent(string endpoint);
-
 
         private void OnRequestEvent(string sender, IntPtr request, IntPtr data)
         {
@@ -334,16 +379,6 @@ namespace Tizen.Applications.ComponentBased
                     }
                 }
             }
-        }
-
-        private void OnAppearedEvent(string endpoint, IntPtr data)
-        {
-
-        }
-
-        private void OnVanishedEvent(string endpoint, IntPtr data)
-        {
-
         }
 
         private Parcel ToParcel(object envelope)

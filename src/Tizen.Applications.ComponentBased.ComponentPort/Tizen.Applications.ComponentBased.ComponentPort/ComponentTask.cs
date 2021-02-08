@@ -25,7 +25,6 @@ namespace Tizen.Applications.ComponentBased
     public class ComponentTask
     {
         private Thread _thread = null;
-        private readonly ComponentPort _port = null;
 
         /// <summary>
         /// Initializes the instance of the ComponentTask class.
@@ -34,7 +33,7 @@ namespace Tizen.Applications.ComponentBased
         /// <since_tizen> 9 </since_tizen>
         public ComponentTask(ComponentPort port)
         {
-            _port = port;
+            Port = port;
             _thread = new Thread(new ThreadStart(OnThread));
         }
 
@@ -50,7 +49,7 @@ namespace Tizen.Applications.ComponentBased
         private void OnThread()
         {
             IsRunning = true;
-            _port.WaitForEvent();
+            Port.WaitForEvent();
             IsRunning = false;
         }
 
@@ -75,7 +74,7 @@ namespace Tizen.Applications.ComponentBased
         {
             if (_thread != null)
             {
-                _port.Cancel();
+                Port.Cancel();
                 _thread.Join();
                 _thread = null;
             }
@@ -95,10 +94,8 @@ namespace Tizen.Applications.ComponentBased
         /// <since_tizen> 9 </since_tizen>
         public ComponentPort Port
         {
-            get
-            {
-                return _port;
-            }
+            get;
+            private set;
         }
     }
 }
