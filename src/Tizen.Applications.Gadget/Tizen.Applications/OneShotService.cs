@@ -19,11 +19,11 @@ using System.ComponentModel;
 using Tizen.Applications;
 using Tizen.Core;
 
-namespace Tizen.NUI
+namespace Tizen.Applications
 {
     /// <summary>
     /// OneShotService performs tasks
-    /// that the NUIGadget processes in parallel
+    /// that the Gadget processes in parallel
     /// during the PreCreate state.
     /// </summary>
     /// <since_tizen> 13 </since_tizen>

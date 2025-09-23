@@ -14,24 +14,28 @@
  * limitations under the License.
  */
 
+using System;
 using System.ComponentModel;
 
-namespace Tizen.NUI
+namespace Tizen.Applications
 {
     /// <summary>
-    /// An interface that make the OneShotService object.
+    /// Event arguments for the Gadget lifecycle change event.
     /// </summary>
     /// <since_tizen> 13 </since_tizen>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IServiceFactory
+    public class GadgetLifecycleChangedEventArgs : EventArgs
     {
         /// <summary>
-        /// Creates a new OneShotService instance.
+        /// Gets the Gadget object that triggered the event.
         /// </summary>
-        /// <param name="name">Unique identifier for the service instance</param>
-        /// <param name="autoClose">Whether to automatically close the service after execution</param>
-        /// <returns>A new OneShotService instance</returns>
         /// <since_tizen> 13 </since_tizen>
-        OneShotService CreateService(string name, bool autoClose);
+        public Gadget Gadget { get; internal set; }
+
+        /// <summary>
+        /// Gets the current state of the Gadget lifecycle.
+        /// </summary>
+        /// <since_tizen> 13 </since_tizen>
+        public GadgetLifecycleState State { get; internal set; }
     }
 }

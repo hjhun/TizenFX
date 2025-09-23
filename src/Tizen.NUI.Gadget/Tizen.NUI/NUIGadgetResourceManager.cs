@@ -15,12 +15,9 @@
  */
 
 using System;
-using System.Globalization;
-using System.Collections.Generic;
-using System.Reflection;
-using System.IO;
 using System.ComponentModel;
-using System.Resources;
+using System.Globalization;
+using Tizen.Applications;
 
 namespace Tizen.NUI
 {
@@ -31,10 +28,7 @@ namespace Tizen.NUI
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class NUIGadgetResourceManager
     {
-        private readonly string _resourcePath;
-        private readonly string _resourceDll;
-        private readonly string _resourceClassName;
-        private readonly IDictionary<string, global::System.Resources.ResourceManager> _resourceMap = new Dictionary<string, global::System.Resources.ResourceManager>();
+        private GadgetResourceManager GadgetResourceManager { get; set; }
 
         /// <summary>
         /// Initializes the resource manager of the gadget.
@@ -44,14 +38,7 @@ namespace Tizen.NUI
         /// <since_tizen> 10 </since_tizen>
         public NUIGadgetResourceManager(NUIGadgetInfo info)
         {
-            if (info == null)
-            {
-                throw new ArgumentNullException(nameof(info));
-            }
-
-            _resourcePath = info.ResourcePath;
-            _resourceDll = info.ResourceFile;
-            _resourceClassName = info.ResourceClassName;
+            GadgetResourceManager = new GadgetResourceManager(info.GadgetInfo);
         }
 
         /// <summary>
@@ -63,9 +50,7 @@ namespace Tizen.NUI
         /// <since_tizen> 10 </since_tizen>
         public NUIGadgetResourceManager(string resourcePath, string resourceDll, string resourceClassName)
         {
-            _resourcePath = resourcePath;
-            _resourceDll = resourceDll;
-            _resourceClassName = resourceClassName;
+            GadgetResourceManager = new GadgetResourceManager(resourcePath, resourceDll, resourceClassName);
         }
 
         /// <summary>
@@ -109,133 +94,7 @@ namespace Tizen.NUI
         /// <since_tizen> 10 </since_tizen>
         public string GetString(string name, CultureInfo cultureInfo)
         {
-            if (string.IsNullOrEmpty(name))
-            {
-                throw new ArgumentNullException(nameof(name));
-            }
-
-            if (cultureInfo == null)
-            {
-                Log.Warn("Use CurrentUICulture");
-                cultureInfo = CultureInfo.CurrentUICulture;
-            }
-
-            string result = string.Empty;
-            try
-            {
-                var resourceManager = GetResourceManager(cultureInfo.Name);
-                if (resourceManager == null)
-                {
-                    resourceManager = GetResourceManager(cultureInfo.TwoLetterISOLanguageName);
-                }
-
-                if (resourceManager != null)
-                {
-                    result = resourceManager.GetString(name, cultureInfo);
-                }
-
-                if (string.IsNullOrEmpty(result))
-                {
-                    resourceManager = GetResourceManager("default");
-                    if (resourceManager != null)
-                    {
-#pragma warning disable CA1304
-                        result = resourceManager.GetString(name);
-#pragma warning restore CA1304
-                    }
-                }
-            }
-            catch (InvalidOperationException e)
-            {
-                Log.Error("InvalidOperationException occurs. " + e.Message);
-            }
-            catch (MissingManifestResourceException e)
-            {
-                Log.Error("MissingManifestResourceException occurs. " + e.Message);
-            }
-            catch (MissingSatelliteAssemblyException e)
-            {
-                Log.Error("MissingSateliteAssemblyException occurs. " + e.Message);
-            }
-
-            return result;
-        }
-
-        private global::System.Resources.ResourceManager GetResourceManager(string path, string baseName)
-        {
-            global::System.Resources.ResourceManager resourceManager = null;
-
-            if (string.IsNullOrEmpty(path))
-            {
-                return null;
-            }
-
-            if (!File.Exists(path))
-            {
-                Log.Warn(path + " does not exist");
-                return null;
-            }
-
-#pragma warning disable CA1031
-            try
-            {
-                Assembly assembly = Assembly.Load(File.ReadAllBytes(path));
-                if (assembly != null)
-                {
-                    resourceManager = new global::System.Resources.ResourceManager(baseName, assembly);
-                    if (resourceManager == null)
-                    {
-                        Log.Error("Failed to create ResourceManager");
-                        return null;
-                    }
-                }
-            }
-            catch (ArgumentNullException e)
-            {
-                Log.Error("ArgumentNullException occurs. " + e.Message);
-            }
-            catch (BadImageFormatException e)
-            {
-                Log.Error("BadImageFormatException occurs. " + e.Message);
-            }
-            catch (Exception e)
-            {
-                Log.Error("Exception occurs. " + e.Message);
-            }
-#pragma warning restore CA1031
-
-            return resourceManager;
-        }
-
-
-        private global::System.Resources.ResourceManager GetResourceManager(string locale)
-        {
-            global::System.Resources.ResourceManager resourceManager;
-
-            if (_resourceMap.TryGetValue(locale, out resourceManager))
-            {
-                return resourceManager;
-            }
-
-            string baseName = _resourceClassName;
-            string path;
-            if (locale == "default")
-            {
-                path = _resourcePath + _resourceDll;
-            }
-            else
-            {
-                path = _resourcePath + locale + "/" + _resourceDll;
-                baseName += "." + locale;
-            }
-
-            resourceManager = GetResourceManager(path, baseName);
-            if (resourceManager != null)
-            {
-                _resourceMap.Add(locale, resourceManager);
-            }
-
-            return resourceManager;
+            return GadgetResourceManager.GetString(name, cultureInfo);
         }
     }
 }

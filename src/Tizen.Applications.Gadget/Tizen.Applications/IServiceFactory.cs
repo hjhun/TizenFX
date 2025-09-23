@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (c) 2023 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2025 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,24 @@
  * limitations under the License.
  */
 
-using System;
 using System.ComponentModel;
-using Tizen.Applications;
 
-namespace Tizen.NUI
+namespace Tizen.Applications
 {
     /// <summary>
-    /// Event arguments for the NUIGadget lifecycle change event.
+    /// An interface that make the OneShotService object.
     /// </summary>
-    /// <since_tizen> 10 </since_tizen>
+    /// <since_tizen> 13 </since_tizen>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class NUIGadgetLifecycleChangedEventArgs : EventArgs
+    public interface IServiceFactory
     {
         /// <summary>
-        /// Gets the NUIGadget object that triggered the event.
+        /// Creates a new OneShotService instance.
         /// </summary>
-        /// <since_tizen> 10 </since_tizen>
-        public NUIGadget Gadget { get; internal set; }
-
-        /// <summary>
-        /// Gets the current state of the NUIGadget lifecycle.
-        /// </summary>
-        /// <since_tizen> 10 </since_tizen>
-        public NUIGadgetLifecycleState State { get; internal set; }
+        /// <param name="name">Unique identifier for the service instance</param>
+        /// <param name="autoClose">Whether to automatically close the service after execution</param>
+        /// <returns>A new OneShotService instance</returns>
+        /// <since_tizen> 13 </since_tizen>
+        OneShotService CreateService(string name, bool autoClose);
     }
 }

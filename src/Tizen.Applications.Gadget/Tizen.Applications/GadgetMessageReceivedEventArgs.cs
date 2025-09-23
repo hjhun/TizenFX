@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (c) 2023 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2025 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,25 @@
 
 using System;
 using System.ComponentModel;
-using Tizen.Applications;
 
-namespace Tizen.NUI
+namespace Tizen.Applications
 {
     /// <summary>
-    /// Event arguments for the NUIGadget lifecycle change event.
+    /// Event arguments for the message received event.
     /// </summary>
-    /// <since_tizen> 10 </since_tizen>
+    /// <since_tizen> 13 </since_tizen>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class NUIGadgetLifecycleChangedEventArgs : EventArgs
+    public class GadgetMessageReceivedEventArgs : EventArgs
     {
-        /// <summary>
-        /// Gets the NUIGadget object that triggered the event.
-        /// </summary>
-        /// <since_tizen> 10 </since_tizen>
-        public NUIGadget Gadget { get; internal set; }
+        internal GadgetMessageReceivedEventArgs(Bundle message)
+        {
+            Message = message;
+        }
 
         /// <summary>
-        /// Gets the current state of the NUIGadget lifecycle.
+        /// Gets the message.
         /// </summary>
-        /// <since_tizen> 10 </since_tizen>
-        public NUIGadgetLifecycleState State { get; internal set; }
+        /// <since_tizen> 13 </since_tizen>
+        public Bundle Message { get; internal set; }
     }
 }

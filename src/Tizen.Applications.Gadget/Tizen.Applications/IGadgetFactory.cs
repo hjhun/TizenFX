@@ -14,28 +14,25 @@
  * limitations under the License.
  */
 
-using System;
 using System.ComponentModel;
 
-namespace Tizen.NUI
+namespace Tizen.Applications
 {
     /// <summary>
-    /// Event arguments for the OneShotService lifecycle change event.
+    /// An interface that make the Gadget object.
     /// </summary>
     /// <since_tizen> 13 </since_tizen>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class OneShotServiceLifecycleChangedEventArgs : EventArgs
+    public interface IGadgetFactory
     {
         /// <summary>
-        /// Gets the OneShotService object that triggered the event.
+        /// Creates a new Gadget instance.
         /// </summary>
+        /// <param name="info">The gadget information.</param>
+        /// <param name="className">The class name of the Gadget.</param>
+        /// <param name="useDefaultContext">The flag it true, use a default context. Otherwise, use a new load context.</param>
+        /// <returns>A new Gadget instance</returns>
         /// <since_tizen> 13 </since_tizen>
-        public OneShotService OneShotService { get; set; }
-
-        /// <summary>
-        /// Gets the current state of the OneShotService lifecycle.
-        /// </summary>
-        /// <since_tizen> 13 </since_tizen>
-        public OneShotServiceLifecycleState State { get; internal set; }
+        Gadget CreateInstance(GadgetInfo info, string className, bool useDefaultContext);
     }
 }

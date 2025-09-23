@@ -16,7 +16,7 @@
 
 using System.ComponentModel;
 
-namespace Tizen.NUI
+namespace Tizen.Applications
 {
     /// <summary>
     /// Enumeration for the lifecycle state of the OneShotService.
