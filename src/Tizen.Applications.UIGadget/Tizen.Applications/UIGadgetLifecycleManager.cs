@@ -16,6 +16,8 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Threading;
 
 namespace Tizen.Applications
 {
@@ -23,6 +25,7 @@ namespace Tizen.Applications
     {
         private static ConcurrentQueue<LifecycleEvent> _lifecycleEvents = new ConcurrentQueue<LifecycleEvent>();
         private static bool _processing = false;
+        private static Thread _mainThread = Thread.CurrentThread;
 
         internal static void DispatchLifecycleEvent(IUIGadget gadget, UIGadgetLifecycleState state)
         {
@@ -33,7 +36,16 @@ namespace Tizen.Applications
 
             Log.Info("ResourceType=" + gadget.UIGadgetInfo.ResourceType + ", State=" + gadget.State + " -> " + state);
             _lifecycleEvents.Enqueue(new LifecycleEvent(gadget, state));
-            ProcessLifecycleEvent();
+
+            if (_mainThread.Equals(Thread.CurrentThread))
+            {
+                ProcessLifecycleEvent();
+            }
+            else
+            {
+                Log.Warn("The caller thread is not main");
+                CoreApplication.Post(() => ProcessLifecycleEvent());
+            }
         }
 
         private static void ProcessLifecycleEvent()
