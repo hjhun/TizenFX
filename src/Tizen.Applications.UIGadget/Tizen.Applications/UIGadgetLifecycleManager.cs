@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Threading;
 
 namespace Tizen.Applications
@@ -27,15 +26,15 @@ namespace Tizen.Applications
         private static bool _processing = false;
         private static Thread _mainThread = Thread.CurrentThread;
 
-        internal static void DispatchLifecycleEvent(IUIGadget gadget, UIGadgetLifecycleState state)
+        internal static void DispatchLifecycleEvent(IUIGadget gadget, Action action)
         {
             if (gadget == null)
             {
                 throw new ArgumentNullException(nameof(gadget));
             }
 
-            Log.Info("ResourceType=" + gadget.UIGadgetInfo.ResourceType + ", State=" + gadget.State + " -> " + state);
-            _lifecycleEvents.Enqueue(new LifecycleEvent(gadget, state));
+            Log.Info("ResourceType=" + gadget.UIGadgetInfo.ResourceType + ", State=" + gadget.State);
+            _lifecycleEvents.Enqueue(new LifecycleEvent(gadget, action));
 
             if (_mainThread.Equals(Thread.CurrentThread))
             {
@@ -64,65 +63,22 @@ namespace Tizen.Applications
                     return;
                 }
 
-                var gadget = lifecycleEvent.UIGadget;
-                if (gadget.State == lifecycleEvent.State)
-                {
-                    Log.Warn("Skip event=" + lifecycleEvent.State);
-                    continue;
-                }
-
-                switch (lifecycleEvent.State)
-                {
-                    case UIGadgetLifecycleState.PreCreated:
-                        if (gadget.State == UIGadgetLifecycleState.Initialized)
-                        {
-                            gadget.OnPreCreate();
-                        }
-                        break;
-                    case UIGadgetLifecycleState.Created:
-                        if (gadget.State == UIGadgetLifecycleState.PreCreated)
-                        {
-                            gadget.MainView = gadget.OnCreate();
-                        }
-                        break;
-                    case UIGadgetLifecycleState.Destroyed:
-                        if (gadget.State == UIGadgetLifecycleState.Resumed)
-                        {
-                            gadget.OnPause();
-                        }
-                        if (gadget.State == UIGadgetLifecycleState.PreCreated || gadget.State == UIGadgetLifecycleState.Created || gadget.State == UIGadgetLifecycleState.Paused)
-                        {
-                            gadget.OnDestroy();
-                        }
-                        break;
-                    case UIGadgetLifecycleState.Resumed:
-                        if (gadget.State == UIGadgetLifecycleState.Created || gadget.State == UIGadgetLifecycleState.Paused)
-                        {
-                            gadget.OnResume();
-                        }
-                        break;
-                    case UIGadgetLifecycleState.Paused:
-                        if (gadget.State == UIGadgetLifecycleState.Resumed)
-                        {
-                            gadget.OnPause();
-                        }
-                        break;
-                }
+                lifecycleEvent.Action?.Invoke();
             }
             _processing = false;
         }
 
         internal class LifecycleEvent
         {
-            internal LifecycleEvent(IUIGadget gadget, UIGadgetLifecycleState state)
+            internal LifecycleEvent(IUIGadget gadget, Action action)
             {
                 UIGadget = gadget;
-                State = state;
+                Action = action;
             }
 
             internal IUIGadget UIGadget { get; set; }
 
-            internal UIGadgetLifecycleState State { get; set; }
+            internal Action Action { get; set; }
         }
     }
 }

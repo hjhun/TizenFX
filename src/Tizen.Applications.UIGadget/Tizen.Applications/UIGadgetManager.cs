@@ -324,8 +324,13 @@ namespace Tizen.Applications
                 throw new ArgumentNullException(nameof(gadget));
             }
 
-            var state = gadget.State;
-            UIGadgetLifecycleManager.DispatchLifecycleEvent(gadget, UIGadgetLifecycleState.PreCreated);
+            UIGadgetLifecycleManager.DispatchLifecycleEvent(gadget, () =>
+            {
+                if (gadget.State == UIGadgetLifecycleState.Initialized)
+                {
+                    gadget.OnPreCreate();
+                }
+            });
         }
 
         /// <summary>
@@ -348,16 +353,19 @@ namespace Tizen.Applications
                 return;
             }
 
-            if (gadget.State == UIGadgetLifecycleState.PreCreated)
+            UIGadgetLifecycleManager.DispatchLifecycleEvent(gadget, () =>
             {
-                UIGadgetLifecycleManager.DispatchLifecycleEvent(gadget, UIGadgetLifecycleState.Created);
-                if (gadget.MainView == null)
+                if (gadget.State == UIGadgetLifecycleState.PreCreated)
                 {
-                    throw new InvalidOperationException("The View MUST be created");
+                    gadget.MainView = gadget.OnCreate();
+                    if (gadget.MainView == null)
+                    {
+                        throw new InvalidOperationException("The View MUST be created");
+                    }
                 }
 
                 _gadgets.TryAdd(gadget, 0);
-            }
+            });
         }
 
         /// <summary>
@@ -379,7 +387,7 @@ namespace Tizen.Applications
             }
 
             _gadgets.TryRemove(gadget, out _);
-            UIGadgetLifecycleManager.DispatchLifecycleEvent(gadget, UIGadgetLifecycleState.Destroyed);
+            gadget.Finish();
         }
 
         /// <summary>
@@ -420,7 +428,13 @@ namespace Tizen.Applications
                 return;
             }
 
-            UIGadgetLifecycleManager.DispatchLifecycleEvent(gadget, UIGadgetLifecycleState.Resumed);
+            UIGadgetLifecycleManager.DispatchLifecycleEvent(gadget, () =>
+            {
+                if (gadget.State == UIGadgetLifecycleState.Created || gadget.State == UIGadgetLifecycleState.Paused)
+                {
+                    gadget.OnResume();
+                }
+            });
         }
 
         /// <summary>
@@ -444,7 +458,13 @@ namespace Tizen.Applications
                 return;
             }
 
-            UIGadgetLifecycleManager.DispatchLifecycleEvent(gadget, UIGadgetLifecycleState.Paused);
+            UIGadgetLifecycleManager.DispatchLifecycleEvent(gadget, () =>
+            {
+                if (gadget.State == UIGadgetLifecycleState.Resumed)
+                {
+                    gadget.OnPause();
+                }
+            });
         }
 
         /// <summary>
